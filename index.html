@@ -75,7 +75,31 @@ function landscape(){return `${header('05','Участок и ландшафт',
 function renders(){return `${header('06','Визуализации','Выберите ракурсы и подготовьте изображения экстерьера и интерьера.','Создать визуализацию')}${tabs('Ракурсы')}<div class="render-grid"><div class="card"><div class="card-head"><div><h2>Готовые кадры</h2><small>3 ракурса · единая сцена</small></div><button class="outline-btn">Экспортировать</button></div><div style="padding:14px;display:grid;gap:12px"><div class="render large"><div class="render-label">01 · Экстерьер · вход</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="render"><div class="render-label">02 · Терраса</div></div><div class="render"><div class="render-label">03 · Гостиная</div></div></div></div></div><div class="card"><div class="card-head"><div><h2>Камеры</h2><small>Координаты сохраняются в сцене</small></div><button class="outline-btn">＋</button></div><div class="camera-list"><div class="camera"><div class="cam-thumb"></div><div><strong>Входная группа</strong><small>16:9 · 2400 × 1600</small></div><span class="tag">готово</span></div><div class="camera"><div class="cam-thumb" style="filter:hue-rotate(30deg)"></div><div><strong>Терраса на закате</strong><small>16:9 · 2400 × 1600</small></div><span class="tag">готово</span></div><div class="camera"><div class="cam-thumb" style="filter:hue-rotate(80deg)"></div><div><strong>Гостиная</strong><small>4:3 · 2000 × 1500</small></div><span class="tag gray">черновик</span></div></div><div style="padding:0 20px 18px"><button class="new-btn" style="width:100%;justify-content:center" onclick="toast('Визуализация добавлена в очередь')">Рендерить выбранные</button></div></div></div>`}
 function renderSection(i){buttons.forEach((b,j)=>b.classList.toggle('active',j===i-1));const views=[overview,sources,scene,materials,landscape,renders];page.innerHTML=views[i-1]();window.scrollTo({top:0,behavior:'smooth'});}
 buttons.forEach((b,i)=>b.addEventListener('click',()=>renderSection(i+1)));
+
 function toast(msg){let t=document.querySelector('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+
+// Lightweight prototype behavior: local file selection, local persistence and interactive controls.
+const filePicker=document.createElement('input'); filePicker.type='file'; filePicker.multiple=true; filePicker.accept='.ifc,.dwg,.dxf,.pdf,.png,.jpg,.jpeg,.obj,.skp'; filePicker.hidden=true; document.body.appendChild(filePicker);
+let pickerContext='files';
+function openPicker(context='files'){pickerContext=context;filePicker.value='';filePicker.click()}
+filePicker.addEventListener('change',()=>{const files=[...filePicker.files];if(!files.length)return;const saved=JSON.parse(localStorage.getItem('atelier_files')||'[]');const next=files.map(f=>({name:f.name,size:f.size,type:f.type||'file',added:new Date().toISOString()}));localStorage.setItem('atelier_files',JSON.stringify(saved.concat(next)));toast(`${files.length} файл${files.length===1?'':'а'} добавлено`);if(pickerContext==='files')renderSection(2)});
+document.addEventListener('dragover',e=>{if(e.target.closest('.dropzone')){e.preventDefault();e.target.closest('.dropzone').style.borderColor='var(--accent-dark)'}});
+document.addEventListener('drop',e=>{const zone=e.target.closest('.dropzone');if(!zone)return;e.preventDefault();zone.style.borderColor='';const files=[...e.dataTransfer.files];if(!files.length)return;const dt=new DataTransfer();files.forEach(f=>dt.items.add(f));filePicker.files=dt.files;filePicker.dispatchEvent(new Event('change'))});
+document.addEventListener('click',e=>{
+  const upload=e.target.closest('.upload,.dropzone');
+  if(upload){e.preventDefault();openPicker('files');return}
+  const add=e.target.closest('.new-btn');
+  if(add && /исходник|загрузить файлы/i.test(add.textContent)){e.preventDefault();openPicker('files');return}
+  const primary=e.target.closest('.mini-actions .primary');
+  if(primary){toast('Изменение сохранено в браузере');localStorage.setItem('atelier_last_action',Date.now());return}
+  const material=e.target.closest('.material');
+  if(material){material.style.outline='2px solid var(--accent)';toast('Материал выбран для назначения');return}
+  const view=e.target.closest('.view-tabs button');
+  if(view){view.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));view.classList.add('active');toast(view.textContent==='Добавить'?'Объект добавлен в сцену':'Открыты параметры объекта');return}
+  const tool=e.target.closest('.float-tool button');
+  if(tool){toast(tool.textContent==='⌖'?'Сцена выровнена':`Масштаб ${tool.textContent==='＋'?'увеличен':'уменьшен'}`);return}
+});
+
 </script>
 </body>
 </html>
