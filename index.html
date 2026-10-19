@@ -180,6 +180,7 @@ function nextModelStep(){if(modelState.step<5){modelState.step+=1;saveModelState
 function modelAnswer(key,value){modelState.answers[key]=value;saveModelState();renderSection(6)}
 function generateModel(){modelState.generated=true;saveModelState();renderSection(6);toast('Эскизная модель построена по заданным параметрам')}
 function setModelFile(file,kind){if(kind==='plan')modelState.planName=file.name;else modelState.refName=file.name;saveModelState();renderSection(6);toast(kind==='plan'?'Планировка добавлена в мастер':'Референс экстерьера добавлен')}
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.159.0/build/three.module.js","web-ifc":"https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js"}}</script>
 <script type="module">
 let ifcViewerState=null;
 async function initIfcViewer(){
@@ -188,7 +189,7 @@ async function initIfcViewer(){
   try{
     const THREE=await import('https://unpkg.com/three@0.159.0/build/three.module.js');
     const {OrbitControls}=await import('https://unpkg.com/three@0.159.0/examples/jsm/controls/OrbitControls.js?module');
-    const {IFCLoader}=await import('https://unpkg.com/web-ifc-three@0.0.126/IFCLoader.js?module');
+    const {IFCLoader}=await import('https://esm.sh/web-ifc-three@0.0.126?external=three');
     const scene=new THREE.Scene(); scene.background=new THREE.Color(0xdce1d8);
     const camera=new THREE.PerspectiveCamera(45,1,.1,1000); camera.position.set(8,6,8);
     const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); host.innerHTML='';host.appendChild(renderer.domElement);
@@ -198,9 +199,9 @@ async function initIfcViewer(){
     const resize=()=>{const w=host.clientWidth||640,h=host.clientHeight||420;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)};resize();window.addEventListener('resize',resize);
     const loop=()=>{controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)};loop();
     ifcViewerState={THREE,scene,camera,renderer,loader,host};host.dataset.loaded='1';delete host.dataset.loading;
-  }catch(err){console.warn('IFC viewer unavailable',err);delete host.dataset.loading;toast('3D-модуль не загрузился — проверьте интернет-соединение')}
+  }catch(err){console.warn('IFC viewer unavailable',err);delete host.dataset.loading;host.dataset.error='1';const status=document.querySelector('#modelLoadStatus');if(status){status.textContent='IFC-модуль: ошибка загрузки';status.className='tag gray'}toast('IFC-модуль не загрузился — проверьте доступ к CDN')}
 }
-window.loadIfcInViewer=async function(file){await initIfcViewer();if(!ifcViewerState)return;try{const {loader,scene,camera,THREE,host}=ifcViewerState;const url=URL.createObjectURL(file);const model=await loader.loadAsync(url);model.rotation.x=0;scene.add(model);const box=new THREE.Box3().setFromObject(model);const center=box.getCenter(new THREE.Vector3());const size=box.getSize(new THREE.Vector3());model.position.sub(center);const max=Math.max(size.x,size.y,size.z)||10;camera.position.set(max*1.4,max*1.1,max*1.4);camera.near=max/1000;camera.far=max*20;camera.updateProjectionMatrix();const canvas=host.closest('.canvas');if(canvas)canvas.classList.add('has-ifc');host.dataset.modelLoaded='1';toast('IFC-модель отображена в 3D-сцене')}catch(err){console.warn('IFC load failed',err);toast('Не удалось прочитать IFC-файл в браузере')}};
+window.loadIfcInViewer=async function(file){await initIfcViewer();if(!ifcViewerState)return;try{const {loader,scene,camera,THREE,host}=ifcViewerState;const url=URL.createObjectURL(file);const model=await loader.loadAsync(url);model.rotation.x=0;scene.add(model);const box=new THREE.Box3().setFromObject(model);const center=box.getCenter(new THREE.Vector3());const size=box.getSize(new THREE.Vector3());model.position.sub(center);const max=Math.max(size.x,size.y,size.z)||10;camera.position.set(max*1.4,max*1.1,max*1.4);camera.near=max/1000;camera.far=max*20;camera.updateProjectionMatrix();const canvas=host.closest('.canvas');if(canvas)canvas.classList.add('has-ifc');host.dataset.modelLoaded='1';toast('IFC-модель отображена в 3D-сцене')}catch(err){console.warn('IFC load failed',err);const status=document.querySelector('#modelLoadStatus');if(status){status.textContent='IFC: ошибка чтения файла';status.className='tag gray'}toast('Не удалось прочитать IFC-файл в браузере')}};
 window.addEventListener('atelier:scene-open',initIfcViewer);
 </script>
 </body>
