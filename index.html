@@ -100,6 +100,28 @@ document.addEventListener('click',e=>{
   if(tool){toast(tool.textContent==='⌖'?'Сцена выровнена':`Масштаб ${tool.textContent==='＋'?'увеличен':'уменьшен'}`);return}
 });
 
+
+const projectState=JSON.parse(localStorage.getItem('atelier_project_state')||'{"objects":12,"materials":12,"renders":0,"selectedCamera":null}');
+function saveState(){localStorage.setItem('atelier_project_state',JSON.stringify(projectState))}
+function addSceneObject(label='Новый объект'){
+  projectState.objects+=1; saveState(); toast(`${label} добавлен в сцену · ${projectState.objects} объектов`);
+  const layer=document.querySelector('.layers'); if(layer){const row=document.createElement('div');row.className='layer';row.innerHTML=`<i style="background:#d9a96b"></i><b>${label}</b><span>новый</span>`;layer.appendChild(row)}
+}
+function refreshUploadedFiles(){
+  const files=JSON.parse(localStorage.getItem('atelier_files')||'[]'); const body=document.querySelector('.table tbody'); if(!body||!files.length)return;
+  files.slice(-6).forEach(f=>{if([...body.querySelectorAll('b')].some(x=>x.textContent===f.name))return;const tr=document.createElement('tr');tr.innerHTML=`<td><div class="file-cell"><div class="asset-icon">▧</div><b>${f.name}</b></div></td><td>Загруженный файл</td><td>${(f.size/1048576).toFixed(1)} МБ</td><td><span class="tag">в проекте</span></td>`;body.appendChild(tr)})
+}
+const originalRenderSection=renderSection;
+renderSection=function(i){originalRenderSection(i);refreshUploadedFiles()};
+const initialFiles=JSON.parse(localStorage.getItem('atelier_files')||'[]');
+if(initialFiles.length) setTimeout(refreshUploadedFiles,0);
+document.addEventListener('click',e=>{
+  const headerAction=e.target.closest('.new-btn');
+  if(headerAction){const text=headerAction.textContent.toLowerCase();if(text.includes('объект')){e.preventDefault();addSceneObject('Объект благоустройства')}else if(text.includes('материал')){e.preventDefault();projectState.materials+=1;saveState();toast(`Материал добавлен · ${projectState.materials} поверхностей назначено`)}else if(text.includes('визуализа')){e.preventDefault();projectState.renders+=1;saveState();toast('Кадр добавлен в очередь визуализации');setTimeout(()=>toast('Демонстрационный рендер готов'),900)}}
+  const addLayer=e.target.closest('.card-head .outline-btn'); if(addLayer && addLayer.textContent.includes('Слой')){e.preventDefault();addSceneObject('Новый слой');return}
+  const camera=e.target.closest('.camera'); if(camera){document.querySelectorAll('.camera').forEach(x=>x.style.outline='');camera.style.outline='2px solid var(--accent)';projectState.selectedCamera=camera.querySelector('strong')?.textContent||null;saveState();toast(`Выбран ракурс: ${projectState.selectedCamera}`)}
+  const renderBtn=e.target.closest('.new-btn'); if(renderBtn && renderBtn.textContent.includes('Рендерить')){renderBtn.disabled=true;renderBtn.textContent='Рендеринг…';setTimeout(()=>{renderBtn.disabled=false;renderBtn.textContent='Рендерить выбранные';toast('Визуализация готова')},1200)}
+});
 </script>
 </body>
 </html>
