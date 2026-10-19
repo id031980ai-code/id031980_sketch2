@@ -177,6 +177,7 @@ function setupPlanCanvas(){const c=document.querySelector('#planDraw');if(!c||c.
 
 </script>
 
+<script>
 const modelState=JSON.parse(localStorage.getItem('atelier_model_state')||'{"step":1,"planName":"","refName":"","answers":{},"generated":false}');
 function saveModelState(){localStorage.setItem('atelier_model_state',JSON.stringify(modelState))}
 function showModelStep(step){modelState.step=step;saveModelState();renderSection(5)}
@@ -184,6 +185,8 @@ function nextModelStep(){if(modelState.step<5){modelState.step+=1;saveModelState
 function modelAnswer(key,value){modelState.answers[key]=value;saveModelState();renderSection(5)}
 function generateModel(){modelState.generated=true;saveModelState();renderSection(5);toast('Эскизная модель построена по заданным параметрам')}
 function setModelFile(file,kind){if(kind==='plan')modelState.planName=file.name;else modelState.refName=file.name;saveModelState();renderSection(5);toast(kind==='plan'?'Планировка добавлена в мастер':'Референс экстерьера добавлен')}
+
+</script>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.159.0/build/three.module.js","web-ifc":"https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js"}}</script>
 <script type="module">
 let ifcViewerState=null;
